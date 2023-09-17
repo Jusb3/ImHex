@@ -76,8 +76,8 @@ namespace hex {
                 std::map<u32, HighlightingFunction> &getForegroundHighlightingFunctions();
                 std::map<u32, Tooltip> &getTooltips();
                 std::map<u32, TooltipFunction> &getTooltipFunctions();
-
                 void setCurrentSelection(std::optional<ProviderRegion> region);
+                void setCurrentSection(u64 sectionId);
             }
 
             /**
@@ -181,6 +181,12 @@ namespace hex {
              * @return The current selection
              */
             std::optional<ProviderRegion> getSelection();
+
+            /**
+             * @brief Gets the id of the section currently shown in hexeditor
+             * @return The current section
+             */
+            u64 getSection();
 
             /**
              * @brief Sets the current selection in the Hex Editor

@@ -1,5 +1,7 @@
 #include "content/views/view_hex_editor.hpp"
 
+#include <pl/patterns/pattern.hpp>
+
 #include <hex/api/content_registry.hpp>
 #include <hex/api/keybinding.hpp>
 #include <hex/api/project_file_manager.hpp>
@@ -17,6 +19,8 @@
 #include <imgui_internal.h>
 
 #include <thread>
+
+#include <wolv/utils/lock.hpp>
 
 using namespace std::literals::string_literals;
 
@@ -680,10 +684,44 @@ namespace hex::plugin::builtin {
 
     void ViewHexEditor::drawContent() {
         if (ImGui::Begin(View::toWindowName(this->getUnlocalizedName()).c_str(), &this->getWindowOpenState(), ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoNavInputs | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse)) {
-            this->m_hexEditor.setProvider(ImHexApi::Provider::get());
-
-            this->m_hexEditor.draw();
-
+            if(ImGui::BeginTabBar("hexeditor_tabs")){
+                    if(ImGui::BeginTabItem("Main", NULL)) {
+                        if(this->m_currSection != 0){
+                            this->m_currSection = 0;
+                            ImHexApi::HexEditor::impl::setCurrentSection(this->m_currSection);
+                            this->m_hexEditor.setProvider(ImHexApi::Provider::get());
+                            this->m_foregroundHighlights->clear();
+                            this->m_backgroundHighlights->clear();
+                        }
+                        this->m_hexEditor.draw();
+                        ImGui::EndTabItem();
+                    }
+                    std::map<u64,pl::api::Section> sections;
+                    if (TRY_LOCK(ContentRegistry::PatternLanguage::getRuntimeLock())) {
+                        auto& runtime = ContentRegistry::PatternLanguage::getRuntime();
+                        sections = runtime.getSections();
+                    }
+                    for (auto &[id, section] : sections) {
+                        if (section.name.empty())
+                            continue;
+                        if(ImGui::BeginTabItem(section.name.c_str(),NULL)) {
+                            if(id!=this->m_currSection){
+                                this->m_dataProvider = std::make_unique<MemoryFileProvider>();
+                                this->m_dataProvider->resize(section.data.size());
+                                this->m_dataProvider->writeRaw(0x00, section.data.data(), section.data.size());
+                                this->m_dataProvider->setReadOnly(true);
+                                this->m_currSection = id;
+                                ImHexApi::HexEditor::impl::setCurrentSection(this->m_currSection);
+                                this->m_hexEditor.setProvider(this->m_dataProvider.get());
+                                this->m_foregroundHighlights->clear();
+                                this->m_backgroundHighlights->clear();
+                            }
+                            this->m_hexEditor.draw();
+                            ImGui::EndTabItem();
+                        }
+                    }
+                    ImGui::EndTabBar();
+            }
             this->drawPopup();
         }
         ImGui::End();
@@ -943,7 +981,7 @@ namespace hex::plugin::builtin {
 
     void ViewHexEditor::registerEvents() {
         EventManager::subscribe<RequestSelectionChange>(this, [this](Region region) {
-            auto provider = ImHexApi::Provider::get();
+            auto provider = this->m_hexEditor.getProvider();
 
             if (region == Region::Invalid()) {
                 this->m_selectionStart->reset();

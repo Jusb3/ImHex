@@ -28,6 +28,7 @@ namespace hex::plugin::builtin::ui {
             this->m_provider = provider;
             this->m_currValidRegion = { Region::Invalid(), false };
         }
+        prv::Provider *getProvider(){return this->m_provider;};
         void setUnknownDataCharacter(char character) { this->m_unknownDataCharacter = character; }
     private:
         enum class CellType { None, Hex, ASCII };

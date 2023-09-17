@@ -73,6 +73,11 @@ namespace hex {
                 s_currentSelection = region;
             }
 
+            static u64 s_currentSection;
+            void setCurrentSection(u64 sectionId) {
+                s_currentSection = sectionId;
+            }
+
         }
 
         u32 addBackgroundHighlight(const Region &region, color_t color) {
@@ -181,6 +186,10 @@ namespace hex {
 
         std::optional<ProviderRegion> getSelection() {
             return impl::s_currentSelection;
+        }
+
+        u64 getSection() {
+            return impl::s_currentSection;
         }
 
         void clearSelection() {

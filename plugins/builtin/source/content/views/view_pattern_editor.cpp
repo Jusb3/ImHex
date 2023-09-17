@@ -550,9 +550,9 @@ namespace hex::plugin::builtin {
 
                         auto patternProvider = ImHexApi::Provider::get();
 
-
                         this->m_sectionWindowDrawer[patternProvider] = [this, id, patternProvider, dataProvider = std::move(dataProvider), hexEditor, patternDrawer = ui::PatternDrawer(), &runtime] mutable {
                             hexEditor.setProvider(dataProvider.get());
+
                             hexEditor.draw(480_scaled);
                             patternDrawer.setSelectionCallback([&](const auto &region) {
                                 hexEditor.setSelection(region);
@@ -1000,7 +1000,6 @@ namespace hex::plugin::builtin {
             ON_SCOPE_EXIT {
                 *this->m_lastEvaluationOutVars = runtime.getOutVariables();
                 *this->m_sections              = runtime.getSections();
-
                 this->m_runningEvaluators--;
 
                 this->m_lastEvaluationProcessed = false;
@@ -1219,9 +1218,9 @@ namespace hex::plugin::builtin {
             auto &runtime = ContentRegistry::PatternLanguage::getRuntime();
 
             std::optional<ImColor> color;
-
+            auto id = ImHexApi::HexEditor::getSection();
             if (TRY_LOCK(ContentRegistry::PatternLanguage::getRuntimeLock())) {
-                for (const auto &patternColor : runtime.getColorsAtAddress(address)) {
+                for (const auto &patternColor : runtime.getColorsAtAddress(address, id)) {
                     if (color.has_value())
                         color = ImAlphaBlendColors(*color, patternColor);
                     else
@@ -1237,8 +1236,8 @@ namespace hex::plugin::builtin {
 
             if (TRY_LOCK(ContentRegistry::PatternLanguage::getRuntimeLock())) {
                 auto &runtime = ContentRegistry::PatternLanguage::getRuntime();
-
-                auto patterns = runtime.getPatternsAtAddress(address);
+                auto id = ImHexApi::HexEditor::getSection();
+                auto patterns = runtime.getPatternsAtAddress(address,id);
                 if (!patterns.empty() && !std::all_of(patterns.begin(), patterns.end(), [](const auto &pattern) { return pattern->getVisibility() == pl::ptrn::Visibility::Hidden; })) {
                     ImGui::BeginTooltip();
 

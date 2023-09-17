@@ -43,19 +43,19 @@ namespace hex::plugin::builtin::ui {
 
         using namespace ::std::literals::string_literals;
 
-        bool isPatternSelected(u64 address, u64 size) {
+        bool isPatternSelected(u64 sectionId,u64 address, u64 size) {
             auto currSelection = ImHexApi::HexEditor::getSelection();
-            if (!currSelection.has_value())
+            if (sectionId != ImHexApi::HexEditor::getSection() || !currSelection.has_value())
                 return false;
 
             return Region{ address, size }.overlaps(*currSelection);
         }
 
         template<typename T>
-        auto highlightWhenSelected(u64 address, u64 size, const T &callback) {
+        auto highlightWhenSelected(u64 sectionId, u64 address, u64 size, const T &callback) {
             constexpr bool HasReturn = !requires(T t) { { t() } -> std::same_as<void>; };
 
-            auto selected = isPatternSelected(address, size);
+            auto selected = isPatternSelected(sectionId, address, size);
 
             if (selected)
                 ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyleColorVec4(ImGuiCol_HeaderActive));
@@ -77,7 +77,7 @@ namespace hex::plugin::builtin::ui {
 
         template<typename T>
         auto highlightWhenSelected(const pl::ptrn::Pattern& pattern, const T &callback) {
-            return highlightWhenSelected(pattern.getOffset(), pattern.getSize(), callback);
+            return highlightWhenSelected(pattern.getSection(), pattern.getOffset(), pattern.getSize(), callback);
         }
 
         void drawTypenameColumn(const pl::ptrn::Pattern& pattern, const std::string& pattern_name) {
@@ -858,7 +858,7 @@ namespace hex::plugin::builtin::ui {
                         ImGui::TableNextColumn();
                         ImGui::TableNextColumn();
 
-                        chunkOpen = highlightWhenSelected(startOffset, ((endOffset + endSize) - startOffset) - 1, [&]{
+                        chunkOpen = highlightWhenSelected(pattern.getSection(),startOffset, ((endOffset + endSize) - startOffset) - 1, [&]{
                             return ImGui::TreeNodeEx(hex::format("{0}[{1} ... {2}]", this->m_treeStyle == TreeStyle::Flattened ? this->getDisplayName(pattern).c_str() : "", i, endIndex - 1).c_str(), ImGuiTreeNodeFlags_SpanFullWidth);
                         });
 

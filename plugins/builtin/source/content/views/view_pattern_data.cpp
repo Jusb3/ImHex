@@ -50,7 +50,12 @@ namespace hex::plugin::builtin {
                 } else {
                     // If the runtime has finished evaluating, draw the patterns
                     if (TRY_LOCK(ContentRegistry::PatternLanguage::getRuntimeLock())) {
-                        this->m_patternDrawer.draw(runtime.getPatterns(), &runtime);
+                        u64 sectionId = ImHexApi::HexEditor::getSection();
+                        if(this->m_lastSectionId != sectionId) {
+                            this->m_patternDrawer.reset();
+                            this->m_lastSectionId = sectionId;
+                        }
+                        this->m_patternDrawer.draw(runtime.getPatterns(sectionId), &runtime);
                     }
                 }
             }

@@ -6,6 +6,8 @@
 #include <hex/helpers/concepts.hpp>
 #include <hex/helpers/encoding_file.hpp>
 
+#include <content/providers/memory_file_provider.hpp>
+
 #include <ui/hex_editor.hpp>
 
 namespace hex::plugin::builtin {
@@ -70,7 +72,8 @@ namespace hex::plugin::builtin {
         void registerMenuItems();
 
         ui::HexEditor m_hexEditor;
-
+        u64 m_currSection = -1;
+        std::unique_ptr<MemoryFileProvider> m_dataProvider;
         bool m_shouldOpenPopup = false;
         std::unique_ptr<Popup> m_currPopup;
 
