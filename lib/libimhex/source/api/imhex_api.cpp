@@ -192,6 +192,10 @@ namespace hex {
             return impl::s_currentSection;
         }
 
+        void setSection(u64 sectionId){
+            EventManager::post<RequestSectionChange>(sectionId);
+        }
+
         void clearSelection() {
             impl::s_currentSelection.reset();
         }

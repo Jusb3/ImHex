@@ -72,7 +72,9 @@ namespace hex::plugin::builtin {
         void registerMenuItems();
 
         ui::HexEditor m_hexEditor;
+
         u64 m_currSection = -1;
+        u64 m_nextSection = -1;
         std::unique_ptr<MemoryFileProvider> m_dataProvider;
         bool m_shouldOpenPopup = false;
         std::unique_ptr<Popup> m_currPopup;

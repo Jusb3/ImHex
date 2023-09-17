@@ -158,6 +158,10 @@ namespace hex::plugin::builtin {
            ImHexApi::HexEditor::impl::setCurrentSelection(region);
         });
 
+        EventManager::subscribe<EventSectionChanged>([](u64 sectionId) {
+           ImHexApi::HexEditor::impl::setCurrentSection(sectionId);
+        });
+
         EventManager::subscribe<RequestOpenInfoPopup>([](const std::string &message) {
             PopupInfo::open(message);
         });

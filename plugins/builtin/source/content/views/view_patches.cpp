@@ -85,6 +85,7 @@ namespace hex::plugin::builtin {
                             ImGui::TableNextColumn();
 
                             if (ImGui::Selectable(("##patchLine" + std::to_string(index)).c_str(), false, ImGuiSelectableFlags_SpanAllColumns)) {
+                                ImHexApi::HexEditor::setSection(0);
                                 ImHexApi::HexEditor::setSelection(address, 1);
                             }
                             if (ImGui::IsMouseReleased(1) && ImGui::IsItemHovered()) {

@@ -20,6 +20,10 @@ namespace hex::plugin::builtin {
             this->m_patternDrawer.reset();
         });
 
+        EventManager::subscribe<EventSectionChanged>(this, [this](auto) {
+            this->m_patternDrawer.reset();
+        });
+
         EventManager::subscribe<EventPatternEvaluating>(this, [this]{
             this->m_patternDrawer.reset();
         });
@@ -35,6 +39,7 @@ namespace hex::plugin::builtin {
     ViewPatternData::~ViewPatternData() {
         EventManager::unsubscribe<EventSettingsChanged>(this);
         EventManager::unsubscribe<EventProviderChanged>(this);
+        EventManager::unsubscribe<EventSectionChanged>(this);
         EventManager::unsubscribe<EventPatternEvaluating>(this);
         EventManager::unsubscribe<EventPatternExecuted>(this);
     }
@@ -51,10 +56,6 @@ namespace hex::plugin::builtin {
                     // If the runtime has finished evaluating, draw the patterns
                     if (TRY_LOCK(ContentRegistry::PatternLanguage::getRuntimeLock())) {
                         u64 sectionId = ImHexApi::HexEditor::getSection();
-                        if(this->m_lastSectionId != sectionId) {
-                            this->m_patternDrawer.reset();
-                            this->m_lastSectionId = sectionId;
-                        }
                         this->m_patternDrawer.draw(runtime.getPatterns(sectionId), &runtime);
                     }
                 }

@@ -562,10 +562,13 @@ namespace hex::plugin::builtin {
 
     ViewHexEditor::ViewHexEditor() : View("hex.builtin.view.hex_editor.name") {
         this->m_hexEditor.setForegroundHighlightCallback([this](u64 address, const u8 *data, size_t size) -> std::optional<color_t> {
+            std::optional<color_t> result;
+            if(this->m_currSection != 0)
+                return result;
+
             if (auto highlight = this->m_foregroundHighlights->find(address); highlight != this->m_foregroundHighlights->end())
                 return highlight->second;
 
-            std::optional<color_t> result;
             for (const auto &[id, callback] : ImHexApi::HexEditor::impl::getForegroundHighlightingFunctions()) {
                 if (auto color = callback(address, data, size, result.has_value()); color.has_value())
                     result = color;
@@ -643,6 +646,7 @@ namespace hex::plugin::builtin {
         EventManager::unsubscribe<EventProviderChanged>(this);
         EventManager::unsubscribe<EventProviderOpened>(this);
         EventManager::unsubscribe<EventHighlightingChanged>(this);
+        EventManager::unsubscribe<RequestSectionChange>(this);
     }
 
     void ViewHexEditor::drawPopup() {
@@ -685,10 +689,16 @@ namespace hex::plugin::builtin {
     void ViewHexEditor::drawContent() {
         if (ImGui::Begin(View::toWindowName(this->getUnlocalizedName()).c_str(), &this->getWindowOpenState(), ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoNavInputs | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse)) {
             if(ImGui::BeginTabBar("hexeditor_tabs")){
-                    if(ImGui::BeginTabItem("Main", NULL)) {
+                    ImGuiTabItemFlags flags = ImGuiTabItemFlags_None;
+                    if(this->m_nextSection == 0){
+                        flags |= ImGuiTabItemFlags_SetSelected;
+                        this->m_nextSection = -1;
+                    }
+                    if(ImGui::BeginTabItem("Main", NULL,flags)) {
                         if(this->m_currSection != 0){
                             this->m_currSection = 0;
-                            ImHexApi::HexEditor::impl::setCurrentSection(this->m_currSection);
+                            ImHexApi::HexEditor::setSection(this->m_currSection);
+                            EventManager::post<EventSectionChanged>(0);
                             this->m_hexEditor.setProvider(ImHexApi::Provider::get());
                             this->m_foregroundHighlights->clear();
                             this->m_backgroundHighlights->clear();
@@ -702,16 +712,21 @@ namespace hex::plugin::builtin {
                         sections = runtime.getSections();
                     }
                     for (auto &[id, section] : sections) {
+                        flags = ImGuiTabItemFlags_None;
+                        if(this->m_nextSection == id){
+                            flags |= ImGuiTabItemFlags_SetSelected;
+                            this->m_nextSection = -1;
+                        }
                         if (section.name.empty())
                             continue;
-                        if(ImGui::BeginTabItem(section.name.c_str(),NULL)) {
+                        if(ImGui::BeginTabItem(section.name.c_str(),NULL,flags)) {
                             if(id!=this->m_currSection){
                                 this->m_dataProvider = std::make_unique<MemoryFileProvider>();
                                 this->m_dataProvider->resize(section.data.size());
                                 this->m_dataProvider->writeRaw(0x00, section.data.data(), section.data.size());
                                 this->m_dataProvider->setReadOnly(true);
                                 this->m_currSection = id;
-                                ImHexApi::HexEditor::impl::setCurrentSection(this->m_currSection);
+                                EventManager::post<EventSectionChanged>(id);
                                 this->m_hexEditor.setProvider(this->m_dataProvider.get());
                                 this->m_foregroundHighlights->clear();
                                 this->m_backgroundHighlights->clear();
@@ -1036,6 +1051,12 @@ namespace hex::plugin::builtin {
         EventManager::subscribe<EventHighlightingChanged>(this, [this]{
            this->m_foregroundHighlights->clear();
            this->m_backgroundHighlights->clear();
+        });
+
+        EventManager::subscribe<RequestSectionChange>(this, [this](u64 sectionId){
+            if(sectionId != this->m_currSection){
+                this->m_nextSection = sectionId;
+            }
         });
 
         ProjectFile::registerPerProviderHandler({

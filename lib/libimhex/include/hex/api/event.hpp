@@ -203,6 +203,7 @@ namespace hex {
     EVENT_DEF(EventProviderClosed,  prv::Provider *);
     EVENT_DEF(EventProviderDeleted, prv::Provider *);
     EVENT_DEF(EventProviderSaved,   prv::Provider *);
+    EVENT_DEF(EventSectionChanged,  u64);
     EVENT_DEF(EventWindowInitialized);
     EVENT_DEF(EventBookmarkCreated, ImHexApi::Bookmarks::Entry&);
     EVENT_DEF(EventPatchCreated, u64, u8, u8);
@@ -225,6 +226,7 @@ namespace hex {
 
     EVENT_DEF(RequestOpenWindow, std::string);
     EVENT_DEF(RequestSelectionChange, Region);
+    EVENT_DEF(RequestSectionChange, u64);
     EVENT_DEF(RequestAddBookmark, Region, std::string, std::string, color_t);
     EVENT_DEF(RequestSetPatternLanguageCode, std::string);
     EVENT_DEF(RequestLoadPatternLanguageFile, std::fs::path);
